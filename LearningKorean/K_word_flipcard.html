@@ -271,8 +271,8 @@ English Word Card Widget Usage Guide:
         document.addEventListener('DOMContentLoaded', function() {
             // URL에서 쿼리 파라미터 가져오기
             const urlParams = new URLSearchParams(window.location.search);
-            const word = urlParams.get('word') || 'apple';
-            const meaning = urlParams.get('meaning') || '사과';
+            const word = urlParams.get('word') || '사과';
+            const meaning = urlParams.get('meaning') || 'apple';
             let imageUrl = urlParams.get('image') || 'https://media.istockphoto.com/id/184276818/ko/%EC%82%AC%EC%A7%84/%EB%A0%88%EB%93%9C-%EC%82%AC%EA%B3%BC%EB%82%98%EB%AC%B4.jpg?s=612x612&w=0&k=20&c=qe0XwDHYbQFgVaqM2unXZWVqI7kV2SSfXrCYaHsdmWM%3D';
             let audioUrl = urlParams.get('audio') || './apple.mp3';
             
