@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual-Flip Term Card</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #5D5FEF;
+            --secondary-color: #10B981;
+            --background-color: transparent;
+            --card-background: #FFFFFF;
+            --text-dark: #1F2937;
+            --text-light: #F3F4F6;
+            --border-radius: 16px;
+            --transition-speed: 0.4s;
+            --word-text-color: #F3F4F6;
+        }
+        body {
+            font-family: 'Noto Sans KR', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; background-color: transparent; color: var(--text-dark);
+        }
+        .card-container {
+            width: 320px; height: 450px;
+            -webkit-user-select: none; user-select: none;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(93, 95, 239, 0.15);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        /* Common styles for both flip containers */
+        .flip-container {
+            width: 100%;
+            perspective: 1500px;
+            cursor: pointer;
+        }
+        .flip-container-top { flex: 3; }
+        .flip-container-bottom { flex: 3; }
+
+        .card-flipper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .card-flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Common styles for all faces */
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Top card faces */
+        .card-front-top {
+            background-color: white;
+            padding: 20px;
+            position: relative; /* For audio button positioning */
+        }
+        .card-back-top {
+            background-color: var(--primary-color);
+            color: var(--word-text-color);
+            transform: rotateY(180deg);
+            padding: 20px;
+            position: relative; /* For audio button positioning */
+        }
+
+        /* Bottom card faces */
+        .card-front-bottom {
+            background: var(--primary-color);
+            padding: 15px;
+            position: relative; /* For audio button positioning */
+        }
+        .card-back-bottom {
+            background: linear-gradient(135deg, var(--secondary-color), #34D399);
+            color: var(--text-light);
+            transform: rotateY(180deg);
+            padding: 15px;
+            position: relative; /* For audio button positioning */
+        }
+
+        .card-image-container {
+            width: 90%; height: 90%; overflow: hidden; border-radius: 12px;
+        }
+        .card-image {
+            width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;
+        }
+        .card-container:hover .card-image {
+            transform: scale(1.05);
+        }
+
+        .card-word {
+            font-size: var(--dynamic-word-font-size, 50px); font-weight: 700; font-family: 'Poppins','Segoe UI',sans-serif;
+            text-align: center; color: var(--word-text-color);
+            line-height: 1.1; word-break: break-word;
+        }
+        .card-meaning {
+            font-size: var(--dynamic-meaning-font-size, 36px); font-weight: 600; text-align: center;
+            color: var(--text-light); word-break: break-word;
+        }
+        .card-example {
+            font-size: var(--dynamic-example-font-size, 24px); font-weight: 400; text-align: center;
+            color: var(--word-text-color); word-break: break-word;
+        }
+
+        /* Common class for text content to apply truncation */
+        .text-content {
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; width: 100%; max-height: 100%;
+        }
+
+        .audio-button {
+            position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background-color: var(--primary-color);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10;
+            transition: all .3s ease; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+        }
+        .audio-button:hover { transform: scale(1.1); background-color: var(--secondary-color); }
+        .audio-button:active { transform: scale(0.95); }
+        .audio-button svg { width: 20px; height: 20px; fill: white; }
+    </style>
+</head>
+<body>
+    <div class="card-container" id="cardContainer">
+        <!-- Top flippable area (Image -> Example) -->
+        <div class="flip-container flip-container-top" id="flipContainerTop">
+            <div class="card-flipper" id="cardTop">
+                <div class="card-face card-front-top">
+                    <div class="card-image-container">
+                        <img id="wordImage" class="card-image" src="" alt="단어 이미지">
+                    </div>
+                    <!-- No audio button here -->
+                </div>
+                <div class="card-face card-back-top">
+                    <p id="kExampleText" class="card-example text-content"></p>
+                    <div class="audio-button" id="audioButtonKExample">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom flippable area (Word -> Meaning) -->
+        <div class="flip-container flip-container-bottom" id="flipContainerBottom">
+            <div class="card-flipper" id="cardBottom">
+                <div class="card-face card-front-bottom">
+                    <h2 id="eWordText" class="card-word text-content"></h2>
+                    <div class="audio-button" id="audioButtonEWord">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
+                </div>
+                <div class="card-face card-back-bottom">
+                    <h2 id="kWordText" class="card-meaning text-content"></h2>
+                    <div class="audio-button" id="audioButtonKWord">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function normalizeDriveAudioCandidates(raw) {
+            let id = null;
+            try {
+                const u = new URL(raw);
+                const m = u.pathname.match(/\/file\/d\/([^/]+)/);
+                id = m ? m[1] : (u.searchParams.get('id') || null);
+            } catch (_) {
+                if (/^[A-Za-z0-9_-]{20,}$/.test(raw)) id = raw;
+            }
+            if (!id) return [raw].filter(Boolean);
+            return [
+                `https://drive.usercontent.google.com/uc?id=${id}&export=download`,
+                `https://drive.google.com/uc?export=download&id=${id}`
+            ];
+        }
+
+        // Helper function to create and append audio element
+        function createAndAppendAudio(audioParam) {
+            const candidates = normalizeDriveAudioCandidates(audioParam);
+            const audioEl = document.createElement('audio');
+            audioEl.preload = 'metadata';
+            audioEl.playsInline = true;
+            audioEl.crossOrigin = 'anonymous';
+            audioEl.style.display = 'none'; // Hide controls
+            document.body.appendChild(audioEl);
+
+            candidates.forEach(src => {
+                const sourceEl = document.createElement('source');
+                sourceEl.src = src;
+                sourceEl.type = 'audio/mpeg';
+                audioEl.appendChild(sourceEl);
+            });
+            return audioEl;
+        }
+
+        // Helper function to play audio
+        function playAudio(audioEl) {
+            try {
+                audioEl.currentTime = 0;
+                audioEl.play();
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                // alert('오디오를 불러오거나 재생할 수 없습니다. 파일 공유 설정과 링크 형식을 확인해 주세요.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const eWord = urlParams.get('e_word') || 'apple';
+            const kWord = urlParams.get('k_word') || '사과';
+            const kExample = urlParams.get('k_example') || 'An apple a day keeps the doctor away.';
+            let imageUrl = urlParams.get('image_e_word') || 'https://media.istockphoto.com/id/184276818/ko/%EC%82%AC%EC%A7%84/%EB%A0%88%EB%93%9C-%EC%82%AC%EA%B3%BC%EB%82%98%EB%AC%B4.jpg?s=612x612&w=0&k=20&c=qe0XwDHYbQFgVaqM2unXZWVqI7kV2SSfXrCYaHsdmWM%3D';
+            
+            // Audio parameters
+            let audioEWordParam = urlParams.get('audio_e_word') || './apple.mp3';
+            let audioKWordParam = urlParams.get('audio_k_word') || './apple_meaning.mp3'; // Default for meaning
+            let audioKExampleParam = urlParams.get('audio_k_example') || './apple_example.mp3'; // Default for example
+
+            function processColor(colorParam, defaultColor) {
+                if (!colorParam) return '#' + defaultColor;
+                const tempElement = document.createElement('div');
+                tempElement.style.color = colorParam;
+                document.body.appendChild(tempElement);
+                const computedColor = window.getComputedStyle(tempElement).color;
+                document.body.removeChild(tempElement);
+                if (computedColor !== 'rgb(0, 0, 0)' || colorParam.toLowerCase() === 'black') return colorParam;
+                return '#' + colorParam;
+            }
+            
+            const defaultPrimaryColor = '5D5FEF';
+            const defaultSecondaryColor = '10B981';
+            const defaultWordTextColor = 'F3F4F6';
+            
+            const primaryColorValue = urlParams.get('primaryColor');
+            const primaryColor = primaryColorValue ? processColor(primaryColorValue, defaultPrimaryColor) : '#' + defaultPrimaryColor;
+            const wordTextColorValue = urlParams.get('wordTextColor');
+            const wordTextColor = wordTextColorValue ? processColor(wordTextColorValue, defaultWordTextColor) : '#' + defaultWordTextColor;
+            const secondaryColorValue = urlParams.get('secondaryColor');
+            const secondaryColor = secondaryColorValue ? processColor(secondaryColorValue, defaultSecondaryColor) : '#' + defaultSecondaryColor;
+            
+            const defaultWidth = 320;
+            const defaultHeight = 450;
+            const aspectRatio = defaultHeight / defaultWidth;
+            const cardWidth = parseInt(urlParams.get('width')) || defaultWidth;
+            const cardHeight = Math.round(cardWidth * aspectRatio);
+            
+            const cardContainer = document.getElementById('cardContainer');
+            cardContainer.style.width = cardWidth + 'px';
+            cardContainer.style.height = cardHeight + 'px';
+            
+            const fontSizeRatio = cardWidth / defaultWidth;
+            document.documentElement.style.setProperty('--dynamic-word-font-size', `${Math.round(45 * fontSizeRatio)}px`);
+            document.documentElement.style.setProperty('--dynamic-meaning-font-size', `${Math.round(36 * fontSizeRatio)}px`);
+            document.documentElement.style.setProperty('--dynamic-example-font-size', `${Math.round(24 * fontSizeRatio)}px`);
+            
+            if (imageUrl.startsWith('@')) imageUrl = imageUrl.substring(1);
+            if (audioWordParam.startsWith('@')) audioWordParam = audioWordParam.substring(1);
+            if (audioMeaningParam.startsWith('@')) audioMeaningParam = audioMeaningParam.substring(1);
+            if (audioExampleParam.startsWith('@')) audioExampleParam = audioExampleParam.substring(1);
+            
+            document.documentElement.style.setProperty('--primary-color', primaryColor);
+            document.documentElement.style.setProperty('--word-text-color', wordTextColor);
+            document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+            
+            // Set text content
+            const eWordElement = document.getElementById('eWordText');
+            const kWordElement = document.getElementById('kWordText');
+            const kExampleElement = document.getElementById('kExampleText');
+            eWordElement.textContent = eWord;
+            kWordElement.textContent = kWord;
+            kExampleElement.textContent = kExample;
+            document.getElementById('wordImage').src = imageUrl;
+            
+            // Create audio elements
+            const audioElEWord = createAndAppendAudio(audioEWordParam);
+            const audioElKWord = createAndAppendAudio(audioKWordParam);
+            const audioElKExample = createAndAppendAudio(audioKExampleParam);
+
+            // Set up audio button click listeners
+            const audioButtonEWord = document.getElementById('audioButtonEWord');
+            if (audioButtonWord) {
+                audioButtonWord.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    playAudio(audioElWord);
+                });
+                audioButtonWord.querySelector('svg').style.fill = wordTextColor; // Apply color
+            }
+
+            const audioButtonKWord = document.getElementById('audioButtonKWord');
+            if (audioButtonMeaning) {
+                audioButtonMeaning.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    playAudio(audioElMeaning);
+                });
+                audioButtonMeaning.querySelector('svg').style.fill = 'white'; // Meaning text is light, so button icon should be white
+            }
+
+            const audioButtonKExample = document.getElementById('audioButtonKExample');
+            if (audioButtonExample) {
+                audioButtonExample.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    playAudio(audioElExample);
+                });
+                audioButtonExample.querySelector('svg').style.fill = wordTextColor; // Apply color
+            }
+            
+            // Flip event listeners
+            const flipContainerTop = document.getElementById('flipContainerTop');
+            const cardTop = document.getElementById('cardTop');
+            flipContainerTop.addEventListener('click', function() {
+                cardTop.classList.toggle('flipped');
+            });
+
+            const flipContainerBottom = document.getElementById('flipContainerBottom');
+            const cardBottom = document.getElementById('cardBottom');
+            flipContainerBottom.addEventListener('click', function() {
+                cardBottom.classList.toggle('flipped');
+            });
+            
+            // Font size adjustment
+            function adjustFontSize(element, container) {
+                const maxFontSize = parseInt(window.getComputedStyle(element).fontSize);
+                const minFontSize = Math.max(14 * fontSizeRatio, 10);
+                let fontSize = maxFontSize;
+                element.style.fontSize = `${fontSize}px`;
+                while (
+                    (element.scrollHeight > container.clientHeight || element.offsetHeight > container.clientHeight) && 
+                    fontSize > minFontSize
+                ) {
+                    fontSize -= 1;
+                    element.style.fontSize = `${fontSize}px`;
+                }
+            }
+            
+            adjustFontSize(wordElement, document.querySelector('.card-front-bottom'));
+            adjustFontSize(meaningElement, document.querySelector('.card-back-bottom'));
+            adjustFontSize(exampleElement, document.querySelector('.card-back-top'));
+        });
+    </script>
+</body>
+</html>
