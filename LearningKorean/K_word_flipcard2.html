@@ -296,30 +296,30 @@
 
             // Set up audio button click listeners
             const audioButtonEWord = document.getElementById('audioButtonEWord');
-            if (audioButtonWord) {
-                audioButtonWord.addEventListener('click', function(e) {
+            if (audioButtonEWord) {
+                audioButtonEWord.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    playAudio(audioElWord);
+                    playAudio(audioElEWord);
                 });
-                audioButtonWord.querySelector('svg').style.fill = wordTextColor; // Apply color
+                audioButtonEWord.querySelector('svg').style.fill = wordTextColor; // Apply color
             }
 
             const audioButtonKWord = document.getElementById('audioButtonKWord');
-            if (audioButtonMeaning) {
-                audioButtonMeaning.addEventListener('click', function(e) {
+            if (audioButtonKWord) {
+                audioButtonKWord.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    playAudio(audioElMeaning);
+                    playAudio(audioElKWord);
                 });
-                audioButtonMeaning.querySelector('svg').style.fill = 'white'; // Meaning text is light, so button icon should be white
+                audioButtonKWord.querySelector('svg').style.fill = 'white'; // Meaning text is light, so button icon should be white
             }
 
             const audioButtonKExample = document.getElementById('audioButtonKExample');
-            if (audioButtonExample) {
-                audioButtonExample.addEventListener('click', function(e) {
+            if (audioButtonKExample) {
+                audioButtonKExample.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    playAudio(audioElExample);
+                    playAudio(audioElKExample);
                 });
-                audioButtonExample.querySelector('svg').style.fill = wordTextColor; // Apply color
+                audioButtonKExample.querySelector('svg').style.fill = wordTextColor; // Apply color
             }
             
             // Flip event listeners
@@ -350,9 +350,9 @@
                 }
             }
             
-            adjustFontSize(wordElement, document.querySelector('.card-front-bottom'));
-            adjustFontSize(meaningElement, document.querySelector('.card-back-bottom'));
-            adjustFontSize(exampleElement, document.querySelector('.card-back-top'));
+            adjustFontSize(eWordElement, document.querySelector('.card-front-bottom'));
+            adjustFontSize(kWordElement, document.querySelector('.card-back-bottom'));
+            adjustFontSize(kExampleElement, document.querySelector('.card-back-top'));
         });
     </script>
 </body>
