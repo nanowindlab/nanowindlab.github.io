@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>K Word Flipcard v2.2 (v1-style visuals, v2.1 data)</title>
+  <style>
+    :root {
+      --primary: #5D5FEF;
+      --secondary: #10B981;
+      --secondary-2: #34D399;
+      --wordText: #FFFFFF;
+      --radius: 16px;
+      --transition-speed: 0.5s;
+      --base-w: 320px;
+      --base-h: 450px;
+      --card-w: var(--base-w);
+      --card-h: var(--base-h);
+      --fs-word: 40px;
+      --fs-meaning: 40px;
+      --fs-example: 28px;
+      --pad: 10px; /* tighter than v2.1 (was 14px) */
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root { --transition-speed: 0.15s; }
+      .slot-inner { transition: none !important; }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0; background: #171717;
+      font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    /* v1-like outer card: white bg, single shadow, rounded corners */
+    .card {
+      width: var(--card-w);
+      height: var(--card-h);
+      display: grid;
+      grid-template-rows: 2fr 1fr;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #FFFFFF; /* v1 느낌 */
+      box-shadow: 0 10px 25px rgba(0,0,0,0.10); /* slightly lighter than v2.1 */
+    }
+
+    .slot { position: relative; perspective: 1000px; }
+    .slot-inner {
+      position: absolute; inset: 0; transform-style: preserve-3d;
+      transition: transform var(--transition-speed) cubic-bezier(.2,.8,.2,1);
+    }
+    .slot.flipped .slot-inner { transform: rotateY(180deg); }
+
+    /* Faces fill the card; remove inner rounding so outer corner looks like v1 */
+    .face {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      backface-visibility: hidden; padding: var(--pad);
+      border-radius: 0; /* key: no inner radius */
+    }
+
+    .front.top { background: #FFFFFF; }
+    .back.top  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
+    .front.bottom { background: var(--primary); color: var(--wordText); flex-direction: column; }
+    .back.bottom  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
+
+    /* Image area: edge-to-edge feel like v1 (no extra white frame & shadow) */
+    .image-wrap {
+      width: 100%; height: 100%;
+      border-radius: 12px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; background: #fff;
+      box-shadow: none; /* remove inner shadow to widen feel */
+    }
+    .image-wrap img { width: 100%; height: 100%; object-fit: contain; }
+
+    .word {
+      font-weight: 800; text-align: center; line-height: 1.2;
+      font-size: var(--fs-word);
+      white-space: pre-line;
+      word-break: break-word; overflow-wrap: anywhere;
+      padding: 0 6px;
+    }
+    .meaning {
+      font-size: var(--fs-meaning); font-weight: 800; text-align: center; white-space: pre-line;
+      word-break: break-word; overflow-wrap: anywhere;
+      padding: 0 6px;
+    }
+    .example {
+      font-size: var(--fs-example);
+      text-align: center; white-space: pre-line;
+      word-break: break-word; overflow-wrap: anywhere;
+      padding: 0 6px;
+    }
+
+    .audio-group { margin-top: 10px; display: flex; gap: 8px; }
+
+    /* v1-like floating audio button option (for bottom area) */
+    .audio-button {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.20);
+      cursor: pointer; transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+      border: 3px solid rgba(0,0,0,0.08);
+    }
+    .audio-button:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 8px 20px rgba(0,0,0,.24); }
+    .audio-button:active { transform: translateY(0) scale(0.98); }
+    .audio-button svg { width: 22px; height: 22px; fill: currentColor; }
+
+    /* a11y focus */
+    .flip-target { outline: none; }
+    .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35) inset; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="단어 플립카드">
+    <!-- Front Top: Image -->
+    <section class="slot" id="slot-top">
+      <div class="slot-inner">
+        <section class="face front top flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="상단 슬롯 뒤집기">
+          <div class="image-wrap">
+            <img id="img" alt="단어 이미지" />
+          </div>
+        </section>
+        <section class="face back top">
+          <p id="example" class="example">강아지가 마당에서 놀고 있어요.</p>
+          <div class="audio-group">
+            <button class="audio-button" type="button" aria-label="예문 오디오 재생" data-audio-key="example">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Front Bottom: k_word -->
+    <section class="slot" id="slot-bottom">
+      <div class="slot-inner">
+        <section class="face front bottom flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="하단 슬롯 뒤집기">
+          <div id="word" class="word">강아지</div>
+          <div class="audio-group">
+            <button class="audio-button" type="button" aria-label="단어 오디오 재생" data-audio-key="word">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+          </div>
+        </section>
+        <section class="face back bottom">
+          <div id="meaning" class="meaning">puppy</div>
+          <div class="audio-group">
+            <button class="audio-button" type="button" aria-label="의미 오디오 재생" data-audio-key="meaning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77z"/></svg>
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Params & responsive sizing
+    const params = new URLSearchParams(location.search);
+    const BASE_W = 320, BASE_H = 450, aspect = BASE_H / BASE_W;
+    const rawWidth = params.get('width');
+    const width = rawWidth ? Math.max(120, parseInt(rawWidth, 10) || BASE_W) : BASE_W;
+    const height = Math.round(width * aspect);
+    const scale = width / BASE_W;
+    document.documentElement.style.setProperty('--card-w', width + 'px');
+    document.documentElement.style.setProperty('--card-h', height + 'px');
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    document.documentElement.style.setProperty('--fs-word', clamp(40 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-meaning', clamp(40 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-example', clamp(28 * scale, 12, 72) + 'px');
+
+    // Optional color overrides
+    const colorOr = (k, fallback) => {
+      const v = params.get(k);
+      return v ? (v.startsWith('#') ? v : '#' + v) : fallback;
+    };
+    const rs = getComputedStyle(document.documentElement);
+    document.documentElement.style.setProperty('--primary', colorOr('primary', rs.getPropertyValue('--primary').trim() || '#5D5FEF'));
+    document.documentElement.style.setProperty('--secondary', colorOr('secondary', rs.getPropertyValue('--secondary').trim() || '#10B981'));
+    document.documentElement.style.setProperty('--secondary-2', colorOr('secondary2', rs.getPropertyValue('--secondary-2').trim() || '#34D399'));
+    document.documentElement.style.setProperty('--wordText', colorOr('wordText', rs.getPropertyValue('--wordText').trim() || '#FFFFFF'));
+
+    // Data: v2.1 parameter-equal properties
+    const data = {
+      k_word: params.get('k_word') || '강아지',
+      e_word: params.get('e_word') || 'puppy',
+      k_example: params.get('k_example') || '강아지가 마당에서 놀고 있어요.',
+      image_url: params.get('image_url') ||
+        'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.png?generation=1756571711380625&alt=media',
+      k_word_audio_url: params.get('k_word_audio_url') || '',
+      k_example_audio_url: params.get('k_example_audio_url') || '',
+      e_word_audio_url: params.get('e_word_audio_url') || ''
+    };
+
+    // DOM
+    document.getElementById('img').src = data.image_url;
+    document.getElementById('word').textContent = data.k_word.replace(/,/g, '\n');
+    document.getElementById('meaning').textContent = data.e_word.replace(/,/g, '\n');
+    document.getElementById('example').textContent = data.k_example.replace(/,/g, '\n');
+
+    // Audio
+    const srcMap = {
+      word: data.k_word_audio_url,
+      example: data.k_example_audio_url,
+      meaning: data.e_word_audio_url,
+    };
+    const playAudio = (src) => {
+      if (!src) return;
+      const a = new Audio();
+      a.preload = 'none';
+      a.src = src;
+      a.play().catch(() => console.warn('오디오 재생 실패:', src));
+    };
+    document.querySelectorAll('[data-audio-key]').forEach(el => {
+      const key = el.getAttribute('data-audio-key');
+      const src = srcMap[key];
+      if (!src) { el.style.display = 'none'; return; }
+      el.addEventListener('click', (e) => { e.stopPropagation(); playAudio(src); });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); playAudio(src); }
+      });
+    });
+
+    // Flip
+    const attachFlip = (slotId) => {
+      const slot = document.getElementById(slotId);
+      const front = slot.querySelector('.front.flip-target');
+      if (!slot || !front) return;
+      const toggle = () => {
+        const flipped = slot.classList.toggle('flipped');
+        front.setAttribute('aria-pressed', String(flipped));
+      };
+      slot.addEventListener('click', (e) => {
+        if (e.target.closest('.audio-button')) return;
+        toggle();
+      });
+      front.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    };
+    attachFlip('slot-top');
+    attachFlip('slot-bottom');
+  </script>
+</body>
+</html>
