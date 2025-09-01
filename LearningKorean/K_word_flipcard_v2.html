@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>K Word Flipcard v2.2 (v1-style visuals, v2.1 data)</title>
+  <title>K Word Flipcard v2.3 (preset: 거북이)</title>
   <style>
     :root {
       --primary: #5D5FEF;
@@ -19,22 +19,20 @@
       --fs-word: 40px;
       --fs-meaning: 40px;
       --fs-example: 28px;
-      --pad: 10px; /* tighter than v2.1 (was 14px) */
+      --pad: 10px;
+      --fab-size: 42px;
+      --fab-offset: 8px;
     }
-
     @media (prefers-reduced-motion: reduce) {
       :root { --transition-speed: 0.15s; }
       .slot-inner { transition: none !important; }
     }
-
     * { box-sizing: border-box; }
     body {
       display: flex; align-items: center; justify-content: center;
       min-height: 100vh; margin: 0; background: #171717;
       font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-
-    /* v1-like outer card: white bg, single shadow, rounded corners */
     .card {
       width: var(--card-w);
       height: var(--card-h);
@@ -42,38 +40,31 @@
       grid-template-rows: 2fr 1fr;
       border-radius: var(--radius);
       overflow: hidden;
-      background: #FFFFFF; /* v1 느낌 */
-      box-shadow: 0 10px 25px rgba(0,0,0,0.10); /* slightly lighter than v2.1 */
+      background: #FFFFFF;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.10);
     }
-
     .slot { position: relative; perspective: 1000px; }
     .slot-inner {
       position: absolute; inset: 0; transform-style: preserve-3d;
       transition: transform var(--transition-speed) cubic-bezier(.2,.8,.2,1);
     }
     .slot.flipped .slot-inner { transform: rotateY(180deg); }
-
-    /* Faces fill the card; remove inner rounding so outer corner looks like v1 */
     .face {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       backface-visibility: hidden; padding: var(--pad);
-      border-radius: 0; /* key: no inner radius */
+      border-radius: 0;
     }
-
     .front.top { background: #FFFFFF; }
     .back.top  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
     .front.bottom { background: var(--primary); color: var(--wordText); flex-direction: column; }
     .back.bottom  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
-
-    /* Image area: edge-to-edge feel like v1 (no extra white frame & shadow) */
     .image-wrap {
       width: 100%; height: 100%;
       border-radius: 12px; overflow: hidden;
       display: flex; align-items: center; justify-content: center; background: #fff;
-      box-shadow: none; /* remove inner shadow to widen feel */
+      box-shadow: none;
     }
     .image-wrap img { width: 100%; height: 100%; object-fit: contain; }
-
     .word {
       font-weight: 800; text-align: center; line-height: 1.2;
       font-size: var(--fs-word);
@@ -92,29 +83,33 @@
       word-break: break-word; overflow-wrap: anywhere;
       padding: 0 6px;
     }
-
-    .audio-group { margin-top: 10px; display: flex; gap: 8px; }
-
-    /* v1-like floating audio button option (for bottom area) */
-    .audio-button {
-      width: 44px; height: 44px; border-radius: 50%;
+    .audio-fab {
+      position: absolute;
+      top: var(--fab-offset);
+      right: var(--fab-offset);
+      z-index: 2;
+      width: var(--fab-size);
+      height: var(--fab-size);
+      border-radius: 9999px;
       display: inline-flex; align-items: center; justify-content: center;
-      background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.20);
-      cursor: pointer; transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
-      border: 3px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: 0 6px 16px rgba(0,0,0,.20);
+      color: var(--primary);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
     }
-    .audio-button:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 8px 20px rgba(0,0,0,.24); }
-    .audio-button:active { transform: translateY(0) scale(0.98); }
-    .audio-button svg { width: 22px; height: 22px; fill: currentColor; }
-
-    /* a11y focus */
+    .audio-fab:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 8px 20px rgba(0,0,0,.24); background: rgba(255,255,255,0.82); }
+    .audio-fab:active { transform: translateY(0) scale(0.98); }
+    .audio-fab svg { width: 20px; height: 20px; fill: currentColor; }
     .flip-target { outline: none; }
     .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35) inset; border-radius: 8px; }
   </style>
 </head>
 <body>
   <div class="card" role="region" aria-label="단어 플립카드">
-    <!-- Front Top: Image -->
     <section class="slot" id="slot-top">
       <div class="slot-inner">
         <section class="face front top flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="상단 슬롯 뒤집기">
@@ -123,41 +118,33 @@
           </div>
         </section>
         <section class="face back top">
+          <button class="audio-fab" type="button" aria-label="예문 오디오 재생" data-audio-key="example">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
           <p id="example" class="example">강아지가 마당에서 놀고 있어요.</p>
-          <div class="audio-group">
-            <button class="audio-button" type="button" aria-label="예문 오디오 재생" data-audio-key="example">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            </button>
-          </div>
         </section>
       </div>
     </section>
 
-    <!-- Front Bottom: k_word -->
     <section class="slot" id="slot-bottom">
       <div class="slot-inner">
         <section class="face front bottom flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="하단 슬롯 뒤집기">
-          <div id="word" class="word">강아지</div>
-          <div class="audio-group">
-            <button class="audio-button" type="button" aria-label="단어 오디오 재생" data-audio-key="word">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            </button>
-          </div>
+          <button class="audio-fab" type="button" aria-label="단어 오디오 재생" data-audio-key="word">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77z"/></svg>
+          </button>
+          <div id="word" class="word">거북이</div>
         </section>
         <section class="face back bottom">
-          <div id="meaning" class="meaning">puppy</div>
-          <div class="audio-group">
-            <button class="audio-button" type="button" aria-label="의미 오디오 재생" data-audio-key="meaning">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77z"/></svg>
-            </button>
-          </div>
+          <button class="audio-fab" type="button" aria-label="의미 오디오 재생" data-audio-key="meaning">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <div id="meaning" class="meaning">turtle</div>
         </section>
       </div>
     </section>
   </div>
 
   <script>
-    // Params & responsive sizing
     const params = new URLSearchParams(location.search);
     const BASE_W = 320, BASE_H = 450, aspect = BASE_H / BASE_W;
     const rawWidth = params.get('width');
@@ -171,7 +158,6 @@
     document.documentElement.style.setProperty('--fs-meaning', clamp(40 * scale, 14, 96) + 'px');
     document.documentElement.style.setProperty('--fs-example', clamp(28 * scale, 12, 72) + 'px');
 
-    // Optional color overrides
     const colorOr = (k, fallback) => {
       const v = params.get(k);
       return v ? (v.startsWith('#') ? v : '#' + v) : fallback;
@@ -182,25 +168,22 @@
     document.documentElement.style.setProperty('--secondary-2', colorOr('secondary2', rs.getPropertyValue('--secondary-2').trim() || '#34D399'));
     document.documentElement.style.setProperty('--wordText', colorOr('wordText', rs.getPropertyValue('--wordText').trim() || '#FFFFFF'));
 
-    // Data: v2.1 parameter-equal properties
+    // Preset defaults for testing (overridden by URL params if present)
     const data = {
-      k_word: params.get('k_word') || '강아지',
-      e_word: params.get('e_word') || 'puppy',
+      k_word: params.get('k_word') || '거북이',
+      e_word: params.get('e_word') || 'turtle',
       k_example: params.get('k_example') || '강아지가 마당에서 놀고 있어요.',
-      image_url: params.get('image_url') ||
-        'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.png?generation=1756571711380625&alt=media',
-      k_word_audio_url: params.get('k_word_audio_url') || '',
-      k_example_audio_url: params.get('k_example_audio_url') || '',
-      e_word_audio_url: params.get('e_word_audio_url') || ''
+      image_url: params.get('image_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle.png?generation=1756571610264627&alt=media',
+      k_word_audio_url: params.get('k_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle.mp3?generation=1756571611852484&alt=media',
+      k_example_audio_url: params.get('k_example_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle_%EC%98%88%EB%AC%B8.mp3?generation=1756571612500367&alt=media',
+      e_word_audio_url: params.get('e_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2Ftortoise;%20turtle_%EA%B1%B0%EB%B6%81%EC%9D%B4.mp3?generation=1756571614064538&alt=media'
     };
 
-    // DOM
     document.getElementById('img').src = data.image_url;
     document.getElementById('word').textContent = data.k_word.replace(/,/g, '\n');
     document.getElementById('meaning').textContent = data.e_word.replace(/,/g, '\n');
     document.getElementById('example').textContent = data.k_example.replace(/,/g, '\n');
 
-    // Audio
     const srcMap = {
       word: data.k_word_audio_url,
       example: data.k_example_audio_url,
@@ -223,7 +206,6 @@
       });
     });
 
-    // Flip
     const attachFlip = (slotId) => {
       const slot = document.getElementById(slotId);
       const front = slot.querySelector('.front.flip-target');
@@ -233,7 +215,7 @@
         front.setAttribute('aria-pressed', String(flipped));
       };
       slot.addEventListener('click', (e) => {
-        if (e.target.closest('.audio-button')) return;
+        if (e.target.closest('[data-audio-key]')) return;
         toggle();
       });
       front.addEventListener('keydown', (e) => {
