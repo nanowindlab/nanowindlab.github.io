@@ -154,9 +154,9 @@
     document.documentElement.style.setProperty('--card-w', width + 'px');
     document.documentElement.style.setProperty('--card-h', height + 'px');
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-    document.documentElement.style.setProperty('--fs-word', clamp(40 * scale, 14, 96) + 'px');
-    document.documentElement.style.setProperty('--fs-meaning', clamp(40 * scale, 14, 96) + 'px');
-    document.documentElement.style.setProperty('--fs-example', clamp(28 * scale, 12, 72) + 'px');
+    document.documentElement.style.setProperty('--fs-word', clamp(50 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-meaning', clamp(50 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-example', clamp(36 * scale, 12, 72) + 'px');
 
     const colorOr = (k, fallback) => {
       const v = params.get(k);
