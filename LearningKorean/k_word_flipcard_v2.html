@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>K Word Flipcard v2 (responsive width, 4 slots, audio badges)</title>
+  <title>K Word Flipcard v2.1 (properties == parameters)</title>
   <style>
     :root {
       --primary: #5D5FEF;
@@ -13,33 +13,24 @@
       --radius: 16px;
       --slot-gap: 0px;
       --transition-speed: 0.5s;
-
-      /* Base (unscaled) card size */
       --base-w: 320px;
       --base-h: 450px;
-
-      /* Effective (scaled) size - JS will override */
       --card-w: var(--base-w);
       --card-h: var(--base-h);
-
-      /* Typography (base) */
       --fs-word: 40px;
       --fs-meaning: 40px;
-      --fs-sentence: 28px;
+      --fs-example: 28px;
     }
-
     @media (prefers-reduced-motion: reduce) {
       :root { --transition-speed: 0.15s; }
       .slot-inner { transition: none !important; }
     }
-
     * { box-sizing: border-box; }
     body {
       display: flex; align-items: center; justify-content: center;
       min-height: 100vh; margin: 0; background: #f5f7fb;
       font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-
     .card {
       width: var(--card-w);
       height: var(--card-h);
@@ -51,32 +42,27 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.12);
       background: transparent;
     }
-
     .slot { position: relative; perspective: 1000px; }
     .slot-inner {
       position: absolute; inset: 0; transform-style: preserve-3d;
       transition: transform var(--transition-speed) cubic-bezier(.2,.8,.2,1);
     }
     .slot.flipped .slot-inner { transform: rotateY(180deg); }
-
     .face {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       backface-visibility: hidden; padding: 14px;
       border-radius: var(--radius);
     }
-
     .front.top { background: #fff; }
     .back.top  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
     .front.bottom { background: var(--primary); color: var(--wordText); flex-direction: column; }
     .back.bottom  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
-
     .image-wrap {
       width: 95%; height: 95%;
       border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.06);
       display: flex; align-items: center; justify-content: center; background: #fafafa;
     }
     .image-wrap img { width: 100%; height: 100%; object-fit: contain; }
-
     .word {
       font-weight: 800; text-align: center; line-height: 1.2;
       font-size: var(--fs-word);
@@ -89,12 +75,12 @@
       word-break: break-word; overflow-wrap: anywhere;
       padding: 2px 6px;
     }
-    .sentence {
-      font-size: var(--fs-sentence); text-align: center; white-space: pre-line;
+    .example {
+      font-size: var(--fs-example);
+      text-align: center; white-space: pre-line;
       word-break: break-word; overflow-wrap: anywhere;
       padding: 2px 6px;
     }
-
     .audio-group { margin-top: 10px; display: flex; gap: 6px; }
     .audio-button {
       width: 40px; height: 40px; border-radius: 50%;
@@ -105,8 +91,6 @@
     .audio-button:hover { transform: scale(1.06); }
     .audio-button:active { transform: scale(0.96); }
     .audio-button svg { width: 20px; height: 20px; fill: currentColor; }
-
-    /* a11y focus */
     .flip-target { outline: none; }
     .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35); border-radius: 10px; }
   </style>
@@ -122,9 +106,9 @@
           </div>
         </section>
         <section class="face back top">
-          <p id="sentence" class="sentence">강아지가 마당에서 놀고 있어요.</p>
+          <p id="example" class="example">강아지가 마당에서 놀고 있어요.</p>
           <div class="audio-group">
-            <button class="audio-button" type="button" aria-label="예문 오디오 재생" data-audio-key="sentence">
+            <button class="audio-button" type="button" aria-label="예문 오디오 재생" data-audio-key="example">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             </button>
           </div>
@@ -156,27 +140,19 @@
   </div>
 
   <script>
-    // --- Config intake & width responsiveness ---
+    // --- Params & width responsiveness ---
     const params = new URLSearchParams(location.search);
-    const BASE_W = 320;
-    const BASE_H = 450;
-    const aspect = BASE_H / BASE_W;
-
+    const BASE_W = 320, BASE_H = 450, aspect = BASE_H / BASE_W;
     const rawWidth = params.get('width');
     const width = rawWidth ? Math.max(120, parseInt(rawWidth, 10) || BASE_W) : BASE_W;
     const height = Math.round(width * aspect);
     const scale = width / BASE_W;
-
     document.documentElement.style.setProperty('--card-w', width + 'px');
     document.documentElement.style.setProperty('--card-h', height + 'px');
-
-    // Scale typography (clamped)
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     document.documentElement.style.setProperty('--fs-word', clamp(40 * scale, 14, 96) + 'px');
     document.documentElement.style.setProperty('--fs-meaning', clamp(40 * scale, 14, 96) + 'px');
-    document.documentElement.style.setProperty('--fs-sentence', clamp(28 * scale, 12, 72) + 'px');
-
-    // Optional color overrides (?primary, ?secondary, ?secondary2, ?wordText)
+    document.documentElement.style.setProperty('--fs-example', clamp(28 * scale, 12, 72) + 'px');
     const colorOr = (k, fallback) => {
       const v = params.get(k);
       return v ? (v.startsWith('#') ? v : '#' + v) : fallback;
@@ -187,26 +163,30 @@
     document.documentElement.style.setProperty('--secondary-2', colorOr('secondary2', rs.getPropertyValue('--secondary-2').trim() || '#34D399'));
     document.documentElement.style.setProperty('--wordText', colorOr('wordText', rs.getPropertyValue('--wordText').trim() || '#FFFFFF'));
 
+    // --- Data object: properties == parameter keys ---
     const data = {
-      word: params.get('k_word') || '강아지',
-      meaning: params.get('e_word') || 'puppy',
-      image: params.get('image') ||
+      k_word: params.get('k_word') || '강아지',
+      e_word: params.get('e_word') || 'puppy',
+      k_example: params.get('k_example') || '강아지가 마당에서 놀고 있어요.',
+      image_url: params.get('image_url') ||
         'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.png?generation=1756571711380625&alt=media',
-      audio: {
-        word: params.get('k_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.mp3?generation=1756571713069736&alt=media',
-        sentence: params.get('k_example_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy_%EC%98%88%EB%AC%B8.mp3?generation=1756571713558181&alt=media',
-        meaning: params.get('e_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2Fpuppy_%EA%B0%95%EC%95%84%EC%A7%80.mp3?generation=1756571715129264&alt=media'
-      },
-      sentence: params.get('k_sentence') || '강아지를 키우다.'
+      k_word_audio_url: params.get('k_word_audio_url') || '',
+      k_example_audio_url: params.get('k_example_audio_url') || '',
+      e_word_audio_url: params.get('e_word_audio_url') || ''
     };
 
-    // Populate content & comma -> newline
-    document.getElementById('img').src = data.image;
-    document.getElementById('word').textContent = data.word.replace(/,/g, '\\n');
-    document.getElementById('meaning').textContent = data.meaning.replace(/,/g, '\\n');
-    document.getElementById('sentence').textContent = data.sentence.replace(/,/g, '\\n');
+    // --- DOM population ---
+    document.getElementById('img').src = data.image_url;
+    document.getElementById('word').textContent = data.k_word.replace(/,/g, '\n');
+    document.getElementById('meaning').textContent = data.e_word.replace(/,/g, '\n');
+    document.getElementById('example').textContent = data.k_example.replace(/,/g, '\n');
 
-    // Audio (event isolation)
+    // --- Audio (event isolation) ---
+    const srcMap = {
+      word: data.k_word_audio_url,
+      example: data.k_example_audio_url,
+      meaning: data.e_word_audio_url,
+    };
     const playAudio = (src) => {
       if (!src) return;
       const a = new Audio();
@@ -216,7 +196,7 @@
     };
     document.querySelectorAll('[data-audio-key]').forEach(el => {
       const key = el.getAttribute('data-audio-key');
-      const src = data.audio[key];
+      const src = srcMap[key];
       if (!src) { el.style.display = 'none'; return; }
       el.addEventListener('click', (e) => { e.stopPropagation(); playAudio(src); });
       el.addEventListener('keydown', (e) => {
@@ -224,7 +204,7 @@
       });
     });
 
-    // Flip engine (independent, a11y)
+    // --- Flip engine (independent, a11y) ---
     const attachFlip = (slotId) => {
       const slot = document.getElementById(slotId);
       const front = slot.querySelector('.front.flip-target');
@@ -233,12 +213,10 @@
         const flipped = slot.classList.toggle('flipped');
         front.setAttribute('aria-pressed', String(flipped));
       };
-      // Mouse (ignore audio)
       slot.addEventListener('click', (e) => {
         if (e.target.closest('.audio-button')) return;
         toggle();
       });
-      // Keyboard
       front.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
       });
