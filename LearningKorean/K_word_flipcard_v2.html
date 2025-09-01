@@ -1,473 +1,103 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flip Card v2</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K Word Flipcard v2</title>
   <style>
-    /* ---- Theme Tokens ---- */
-    :root{
-      --primary-color:#5D5FEF;
-      --secondary-color:#10B981;
-      --word-text-color:#F3F4F6;
-      --text-dark:#1F2937;
-      --text-light:#F9FAFB;
-      --radius:16px;
-      --elev:0 10px 25px rgba(93,95,239,.15);
-      --transition:transform .6s cubic-bezier(0.165, 0.84, 0.44, 1);
-      --slot-gap:10px;
+    :root {
+      --primary: #5D5FEF;
+      --secondary: #10B981;
+      --wordText: #FFFFFF;
+      --radius: 16px;
+      --transition-speed: 0.5s;
     }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Noto Sans KR','Segoe UI','Roboto','Arial',sans-serif;
-      min-height:100vh;display:flex;align-items:center;justify-content:center;
-      background:transparent;color:var(--text-dark);
-      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    body {
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; background: #f5f5f5; margin: 0;
+      font-family: 'Noto Sans KR', sans-serif;
     }
-    /* ---- Card Sizing (defaults match K_word_flipcard.html) ---- */
-    .card-wrap{
-      width:320px;height:450px;display:flex;flex-direction:column;gap:var(--slot-gap);
-      perspective:1500px;position:relative;
+    .card {
+      width: 320px; height: 450px; display: flex; flex-direction: column;
+      border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
-    .card-shell{
-      flex:1;position:relative;border-radius:var(--radius);
-      box-shadow:var(--elev);overflow:hidden;
+    .slot {
+      flex: 1; position: relative; perspective: 1000px; cursor: pointer;
     }
-    .slot-3d{
-      position:absolute;inset:0;transform-style:preserve-3d;
-      transition:var(--transition);border-radius:var(--radius);
-      background:#fff;
+    .slot-inner {
+      width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+      transform-style: preserve-3d; transition: transform var(--transition-speed);
     }
-    .slot-3d.flipped{ transform:rotateY(180deg) }
-    .face{
-      position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);
-      display:flex;align-items:center;justify-content:center;overflow:hidden;
+    .slot.flipped .slot-inner { transform: rotateY(180deg); }
+    .front, .back {
+      width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
+      display: flex; justify-content: center; align-items: center; padding: 10px;
+      border: 1px solid #ddd; box-sizing: border-box;
     }
-    .face.front{ background:#fff }
-    .face.back{ background:linear-gradient(135deg,var(--secondary-color),#34D399); color:var(--text-light); transform:rotateY(180deg) }
-    /* ---- Top (image ↔ sentence) ---- */
-    .top .face.front{ padding:20px }
-    .image-frame{ width:100%; height:100%; border-radius:12px; overflow:hidden }
-    .image-frame img{ width:100%; height:100%; object-fit:cover; display:block }
-    .text-block{
-      width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center;
-      padding:16px; text-align:center; gap:10px;
-    }
-    .text-block .text{
-      max-width:95%;
-      font-family:'Poppins','Segoe UI',sans-serif;
-      font-weight:700; line-height:1.15; letter-spacing:.3px;
-      word-break:break-word; overflow-wrap:break-word;
-    }
-    .text--word{ color:var(--word-text-color) }
-    .text--meaning{ color:#F3F4F6 }
-    .text--sentence{ color:#F3F4F6; font-weight:600 }
-    .badge-row{
-      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
-    }
-    .badge{
-      border:none; outline:none; cursor:pointer; user-select:none;
-      padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600;
-      background:#ffffff22; color:#fff; backdrop-filter:blur(4px);
-      transition:transform .15s ease, background .2s ease;
-    }
-    .badge:hover{ transform:translateY(-1px) }
-    .badge.active{ background:#ffffff55 }
-    /* ---- Bottom (word ↔ meaning) ---- */
-    .bottom .face.front{ background:var(--primary-color) }
-    .bottom .text-block .text{ color:var(--word-text-color) }
-    .bottom .face.back{ background:linear-gradient(135deg,var(--secondary-color),#34D399) }
-    /* ---- Controls / A11y ---- */
-    .slot-hit{
-      position:absolute; inset:0; z-index:5; background:transparent;
-    }
-    .slot-hit[role="button"]{ outline:none }
-    .audio-btn, .inline-audio{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border-radius:999px; border:none; cursor:pointer;
-      background:var(--primary-color); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
-      transition:transform .12s ease, background .2s ease;
-    }
-    .audio-btn:hover, .inline-audio:hover{ transform:scale(1.05); background:var(--secondary-color) }
-    .inline-audio{ width:28px; height:28px; background:#ffffff33 }
-    .inline-controls{ display:flex; align-items:center; gap:8px; }
-    .row{ display:flex; align-items:center; gap:10px; justify-content:center }
-    .toast{
-      position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
-      background:#111; color:#fff; padding:10px 14px; border-radius:8px; font-size:13px;
-      box-shadow:0 4px 14px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:opacity .25s ease;
-      z-index:9999;
-    }
-    .toast.show{ opacity:1 }
-    .verif{
-      position:absolute; top:8px; left:8px; background:#00000088; color:#fff; padding:6px 8px; border-radius:6px; font-size:12px; display:none; z-index:99;
-    }
-    .verif ul{ margin-left:14px }
-    @media (prefers-reduced-motion:reduce){
-      .slot-3d{ transition:transform .2s linear }
+    .front { background: #fff; }
+    .back { background: var(--secondary); color: #fff; transform: rotateY(180deg); }
+    .front.top img { width: 90%; height: 90%; object-fit: contain; border-radius: 12px; }
+    .front.bottom { background: var(--primary); color: var(--wordText); font-size: 2rem; font-weight: bold; }
+    .back.top { font-size: 1rem; }
+    .back.bottom { font-size: 1.5rem; font-weight: bold; }
+    .audio-buttons { position: absolute; top: 5px; right: 5px; display: flex; gap: 5px; }
+    .audio-btn {
+      width: 28px; height: 28px; border-radius: 50%; background: var(--primary);
+      color: white; font-size: 0.8rem; display: flex; justify-content: center; align-items: center;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="card-wrap" id="cardWrap">
-    <!-- Verification panel (hidden by default) -->
-    <div class="verif" id="verifPanel" aria-live="polite"></div>
-
-    <!-- TOP SLOT (front:image ↔ back:sentence) -->
-    <section class="card-shell top" aria-label="Top slot">
-      <div class="slot-3d" id="slotTop3D">
-        <div class="face front">
-          <div class="image-frame">
-            <img id="imgFrontTop" alt="word image" loading="lazy">
-          </div>
+  <div class="card">
+    <!-- Front-Top (Image) ↔ Back-Top (Sentence) -->
+    <div class="slot" id="slot-top">
+      <div class="slot-inner">
+        <div class="front top">
+          <img src="https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.png?generation=1756571711380625&alt=media" alt="puppy">
         </div>
-        <div class="face back">
-          <div class="text-block">
-            <div class="text text--sentence" id="txtBackTop" style="font-size:24px">Sentence here</div>
-            <div class="row">
-              <div class="inline-controls" id="backTopBadges"></div>
-              <button class="audio-btn" id="backTopPlay" aria-label="Play sentence audio" title="Play">
-                ▶
-              </button>
-            </div>
+        <div class="back top">
+          <p>강아지가 마당에서 놀고 있어요.</p>
+          <div class="audio-buttons">
+            <div class="audio-btn" data-audio="https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy_%EC%98%88%EB%AC%B8.mp3?generation=1756571713558181&alt=media">▶</div>
           </div>
         </div>
       </div>
-      <div class="slot-hit" id="topHit" role="button" tabindex="0" aria-pressed="false" aria-label="Flip top slot"></div>
-    </section>
+    </div>
 
-    <!-- BOTTOM SLOT (front:word(s) ↔ back:meaning) -->
-    <section class="card-shell bottom" aria-label="Bottom slot">
-      <div class="slot-3d" id="slotBottom3D">
-        <div class="face front">
-          <div class="text-block">
-            <div class="text text--word" id="txtFrontBottom" style="font-size:36px">word</div>
-            <div class="row">
-              <div class="inline-controls" id="frontBottomBadges"></div>
-              <button class="audio-btn" id="frontBottomPlay" aria-label="Play word audio" title="Play">
-                ▶
-              </button>
-            </div>
+    <!-- Front-Bottom (Word) ↔ Back-Bottom (Meaning) -->
+    <div class="slot" id="slot-bottom">
+      <div class="slot-inner">
+        <div class="front bottom">
+          강아지
+          <div class="audio-buttons">
+            <div class="audio-btn" data-audio="https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B0%95%EC%95%84%EC%A7%80_puppy.mp3?generation=1756571713069736&alt=media">▶</div>
           </div>
         </div>
-        <div class="face back">
-          <div class="text-block">
-            <div class="text text--meaning" id="txtBackBottom" style="font-size:32px">meaning</div>
-            <div class="row">
-              <div class="inline-controls" id="backBottomBadges"></div>
-              <button class="audio-btn" id="backBottomPlay" aria-label="Play meaning audio" title="Play">
-                ▶
-              </button>
-            </div>
-          </div>
+        <div class="back bottom">
+          puppy
         </div>
       </div>
-      <div class="slot-hit" id="bottomHit" role="button" tabindex="0" aria-pressed="false" aria-label="Flip bottom slot"></div>
-    </section>
+    </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
   <script>
-    /* -------------------- Utilities -------------------- */
-    const qs = (s, p=document) => p.querySelector(s);
-    const qsa = (s, p=document) => [...p.querySelectorAll(s)];
-    const showToast = (msg='', ms=2400) => {
-      const t = qs('#toast'); if(!t) return;
-      t.textContent = msg; t.classList.add('show');
-      clearTimeout(showToast._to); showToast._to = setTimeout(()=>t.classList.remove('show'), ms);
-    };
-    const processColor = (colorParam, fallbackHex) => {
-      if(!colorParam) return '#' + fallbackHex;
-      const el = document.createElement('div');
-      el.style.color = colorParam; document.body.appendChild(el);
-      const comp = getComputedStyle(el).color; document.body.removeChild(el);
-      if (comp !== 'rgb(0, 0, 0)' || colorParam.toLowerCase()==='black') return colorParam;
-      return '#' + colorParam;
-    };
-    // optional: Google Drive link → direct audio candidates
-    function normalizeDriveAudioCandidates(raw){
-      let id=null;
-      try{
-        const u=new URL(raw); const m=u.pathname.match(/\\/file\\/d\\/([^/]+)/);
-        id = m? m[1] : (u.searchParams.get('id')||null);
-      }catch(_){ if(/^[A-Za-z0-9_-]{20,}$/.test(raw)) id=raw; }
-      if(!id) return [raw].filter(Boolean);
-      return [
-        \`https://drive.usercontent.google.com/uc?id=\${id}&export=download\`,
-        \`https://drive.google.com/uc?export=download&id=\${id}\`
-      ];
-    }
-    const decodeConfig = async () => {
-      const url = new URL(window.location.href);
-      const P = url.searchParams;
-      // JSON config priority
-      const configRaw = P.get('config');
-      const configUrl = P.get('config_url');
-      if(configRaw){
-        try{
-          let jsonStr = configRaw;
-          if(jsonStr.startsWith('data:')){
-            const base64 = jsonStr.split(',')[1]||'';
-            jsonStr = atob(base64);
-          }else{
-            try{ jsonStr = atob(jsonStr); }catch(_){ jsonStr = decodeURIComponent(jsonStr); }
-          }
-          return JSON.parse(jsonStr);
-        }catch(e){ showToast('config 파싱 실패: URL 인코딩/베이스64 확인'); }
-      }
-      if(configUrl){
-        try{
-          const res = await fetch(configUrl, {cache:'no-store'});
-          if(!res.ok) throw new Error(res.status);
-          return await res.json();
-        }catch(e){ showToast('config_url 로드 실패(CORS/네트워크 확인)'); }
-      }
-      // fallback: URL params → minimal schema
-      const word    = P.get('word')    || 'apple';
-      const meaning = P.get('meaning') || '사과';
-      const image   = P.get('image')   || '';
-      const backTopText = P.get('backTopText') || 'I eat an apple every morning.';
-      const fAudio  = P.get('frontBottomAudio') || '';
-      const bTAudio = P.get('backTopAudio') || '';
-      const bBAudio = P.get('backBottomAudio') || '';
-      return {
-        layout:{ width: parseInt(P.get('width')||'320',10) },
-        theme:{
-          primary: processColor(P.get('primaryColor'),'5D5FEF'),
-          secondary: processColor(P.get('secondaryColor')||'10B981','10B981'),
-          wordText: processColor(P.get('wordTextColor')||'F3F4F6','F3F4F6')
-        },
-        debug: P.get('debug')==='true',
-        content:{
-          front:{
-            top:{ type:'image', src:image, alt:word||'image' },
-            bottom:{ type:'text', items:[ { text: word, audioList: fAudio? [{label:'A', src:fAudio}]:[] } ] }
-          },
-          back:{
-            top:{ type:'text', items:[ { text: backTopText, audioList: bTAudio? [{label:'A', src:bTAudio}]:[] } ] },
-            bottom:{ type:'text', items:[ { text: meaning, audioList: bBAudio? [{label:'A', src:bBAudio}]:[] } ] }
-          }
-        },
-        flip:{ clickTargets:['front.top','front.bottom','back.top','back.bottom'], initialFlipped:[], persistState:true },
-        a11y:{ reducedMotion:'auto' }
-      };
-    };
-
-    /* -------------------- State -------------------- */
-    const state = {
-      topFlipped:false,
-      bottomFlipped:false,
-      audio:{ // one <audio> element per text area
-        backTop: null,
-        frontBottom: null,
-        backBottom: null
-      },
-      currentSrc:{
-        backTop:null,
-        frontBottom:null,
-        backBottom:null
-      },
-      audioSources:{
-        backTop:[],
-        frontBottom:[],
-        backBottom:[]
-      },
-      debug:false
-    };
-
-    function setTheme(theme){
-      if(!theme) return;
-      document.documentElement.style.setProperty('--primary-color', theme.primary || '#5D5FEF');
-      document.documentElement.style.setProperty('--secondary-color', theme.secondary || '#10B981');
-      document.documentElement.style.setProperty('--word-text-color', theme.wordText || '#F3F4F6');
-    }
-    function setSize(width){
-      const w = parseInt(width||320,10);
-      const aspect = 450/320; // follow K_word_flipcard.html default
-      const h = Math.round(w*aspect);
-      const wrap = qs('#cardWrap');
-      wrap.style.width = w+'px';
-      wrap.style.height = h+'px';
-      // font scaling heuristics
-      document.documentElement.style.setProperty('--base-word-font', Math.round(36*(w/320))+'px');
-      document.documentElement.style.setProperty('--base-meaning-font', Math.round(32*(w/320))+'px');
-      document.documentElement.style.setProperty('--base-sentence-font', Math.round(24*(w/320))+'px');
-    }
-
-    function fitText(el, maxPx, minPx=14){
-      if(!el) return;
-      let size = maxPx, tries=0;
-      el.style.fontSize = size+'px';
-      const parent = el.parentElement;
-      while(tries<20 && (el.scrollHeight>parent.clientHeight || el.scrollWidth>parent.clientWidth)){
-        size -= 2;
-        if(size <= minPx) break;
-        el.style.fontSize = size+'px';
-        tries++;
-      }
-    }
-
-    function makeAudioElement(){
-      const a = document.createElement('audio');
-      a.preload='metadata'; a.playsInline=true; a.controls=false;
-      a.setAttribute('controlsList','nodownload noplaybackrate');
-      a.style.display='none';
-      document.body.appendChild(a);
-      return a;
-    }
-
-    function setAudioSources(targetKey, sources){
-      state.audioSources[targetKey] = sources||[];
-      // pick first available
-      if(sources && sources.length){
-        const cand = normalizeDriveAudioCandidates(sources[0].src||'')[0] || sources[0].src;
-        state.currentSrc[targetKey] = cand;
-      }else{
-        state.currentSrc[targetKey] = null;
-      }
-    }
-
-    function renderBadges(container, targetKey){
-      container.innerHTML='';
-      const list = state.audioSources[targetKey] || [];
-      list.forEach((it, idx)=>{
-        const b = document.createElement('button');
-        b.className='badge'+(idx===0?' active':'');
-        b.type='button';
-        b.textContent = it.label||('A'+idx);
-        b.addEventListener('click', (ev)=>{
-          ev.stopPropagation();
-          qsa('.badge', container).forEach(x=>x.classList.remove('active'));
-          b.classList.add('active');
-          const cand = normalizeDriveAudioCandidates(it.src||'')[0] || it.src;
-          state.currentSrc[targetKey] = cand;
-        });
-        container.appendChild(b);
+    // 독립 슬롯 플립
+    document.querySelectorAll('.slot').forEach(slot => {
+      slot.addEventListener('click', e => {
+        if (e.target.classList.contains('audio-btn')) return; // 오디오 버튼 클릭 시 뒤집힘 방지
+        slot.classList.toggle('flipped');
       });
-    }
+    });
 
-    function playAudio(targetKey){
-      const el = state.audio[targetKey];
-      const src = state.currentSrc[targetKey];
-      if(!el || !src){ showToast('오디오 소스가 없습니다.'); return; }
-      // reset sources
-      el.innerHTML='';
-      const cands = normalizeDriveAudioCandidates(src);
-      cands.forEach(url=>{
-        const s = document.createElement('source');
-        s.src = url; s.type='audio/mpeg';
-        el.appendChild(s);
+    // 오디오 재생
+    document.querySelectorAll('.audio-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const audio = new Audio(btn.dataset.audio);
+        audio.play();
       });
-      el.currentTime = 0;
-      el.play().catch(()=>{
-        showToast('오디오 재생 실패: 링크/권한을 확인하세요.');
-      });
-    }
-
-    function wireFlip(slotHitEl, shellEl, axisKey){
-      const toggle = ()=>{
-        const flipped = shellEl.classList.toggle('flipped');
-        if(axisKey==='top') state.topFlipped = flipped;
-        else state.bottomFlipped = flipped;
-        slotHitEl.setAttribute('aria-pressed', flipped?'true':'false');
-      };
-      slotHitEl.addEventListener('click', toggle);
-      slotHitEl.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggle(); }
-      });
-    }
-
-    function verification(config){
-      const issues = [];
-      // slots present?
-      if(!qs('#slotTop3D') || !qs('#slotBottom3D')) issues.push('슬롯 DOM 누락(top/bottom)');
-      // mapping
-      const c = config?.content||{};
-      if(!c.front?.top || !c.front?.bottom || !c.back?.top || !c.back?.bottom){
-        issues.push('content 구조(front/back, top/bottom) 확인 필요');
-      }
-      // image URL check
-      if(c.front?.top?.type==='image' && !c.front.top.src){
-        issues.push('앞면-위 이미지 src가 비어있습니다.');
-      }
-      // audio presence warnings
-      const warnAudio = (items, label)=>{
-        (items||[]).forEach((it,i)=>{
-          if(!it.audioList || !it.audioList.length) issues.push(label+'['+i+'] 오디오 없음');
-          else if(!it.audioList[0].src) issues.push(label+'['+i+'] 오디오 src 비어있음');
-        });
-      };
-      warnAudio(c.front?.bottom?.items,'앞면-아래 텍스트');
-      warnAudio(c.back?.top?.items,'뒷면-위 텍스트');
-      warnAudio(c.back?.bottom?.items,'뒷면-아래 텍스트');
-
-      // render panel
-      const panel = qs('#verifPanel');
-      if(!panel) return;
-      const ok = issues.length===0;
-      panel.style.display = 'block';
-      panel.innerHTML = ok ? 'Verification: ✅ Passed' :
-        'Verification: ⚠️ Check<br><ul>'+issues.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
-      if(!state.debug){ panel.style.display='none'; }
-      if(!ok) showToast('검증 경고가 있습니다(좌상단 패널 참고).');
-    }
-
-    (async function init(){
-      const cfg = await decodeConfig();
-      state.debug = !!cfg?.debug;
-      // theme & size
-      setTheme(cfg.theme);
-      setSize(cfg.layout?.width||320);
-
-      // content fill
-      // Top front: image
-      const img = qs('#imgFrontTop');
-      img.src = cfg?.content?.front?.top?.src || '';
-      img.alt = cfg?.content?.front?.top?.alt || 'image';
-
-      // Back top: sentence
-      const backTopItems = cfg?.content?.back?.top?.items || [];
-      qs('#txtBackTop').textContent = backTopItems[0]?.text || '—';
-      fitText(qs('#txtBackTop'), parseInt(getComputedStyle(qs('#txtBackTop')).fontSize)||24, 14);
-      state.audio.backTop = state.audio.backTop || makeAudioElement();
-      setAudioSources('backTop', backTopItems[0]?.audioList || []);
-      renderBadges(qs('#backTopBadges'), 'backTop');
-
-      // Front bottom: word(s)
-      const frontBottomItems = cfg?.content?.front?.bottom?.items || [];
-      // concatenate words if multiple (first item displayed, badges handle audio)
-      qs('#txtFrontBottom').textContent = frontBottomItems.map(it=>it.text).filter(Boolean).join(' · ') || '—';
-      fitText(qs('#txtFrontBottom'), parseInt(getComputedStyle(qs('#txtFrontBottom')).fontSize)||36, 16);
-      state.audio.frontBottom = state.audio.frontBottom || makeAudioElement();
-      // default to first item's audio list; advanced UI could list per-item badges
-      const fbAudio = (frontBottomItems[0]?.audioList)||[];
-      setAudioSources('frontBottom', fbAudio);
-      renderBadges(qs('#frontBottomBadges'), 'frontBottom');
-
-      // Back bottom: meaning (word or meaning on back)
-      const backBottomItems = cfg?.content?.back?.bottom?.items || [];
-      qs('#txtBackBottom').textContent = backBottomItems[0]?.text || '—';
-      fitText(qs('#txtBackBottom'), parseInt(getComputedStyle(qs('#txtBackBottom')).fontSize)||32, 14);
-      state.audio.backBottom = state.audio.backBottom || makeAudioElement();
-      setAudioSources('backBottom', backBottomItems[0]?.audioList || []);
-      renderBadges(qs('#backBottomBadges'), 'backBottom');
-
-      // Buttons: play handlers (stop propagation)
-      qs('#backTopPlay').addEventListener('click', (e)=>{ e.stopPropagation(); playAudio('backTop'); });
-      qs('#frontBottomPlay').addEventListener('click', (e)=>{ e.stopPropagation(); playAudio('frontBottom'); });
-      qs('#backBottomPlay').addEventListener('click', (e)=>{ e.stopPropagation(); playAudio('backBottom'); });
-
-      // Wire flipping (independent, persistent)
-      wireFlip(qs('#topHit'), qs('#slotTop3D'), 'top');
-      wireFlip(qs('#bottomHit'), qs('#slotBottom3D'), 'bottom');
-
-      // Verification (mandatory)
-      verification(cfg);
-    })();
+    });
   </script>
 </body>
 </html>
