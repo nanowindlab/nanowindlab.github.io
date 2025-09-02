@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>K Word Flipcard v2.14 (Pure CSS Flip)</title>
+  <style>
+    /*
+      v2.41 Change Log:
+      - Implemented "Pure CSS Flip" using the checkbox hack.
+      - This removes JavaScript dependency for the flip animation,
+        ensuring compatibility with restrictive iframe environments like Notion.
+      - Removed attachFlip() JS function.
+      - Added .flip-toggle, .flip-label CSS rules.
+      - Changed flip logic from .flipped class to :checked pseudo-selector.
+    */
+    :root {
+      --primary: #5D5FEF;
+      --secondary: #10B981;
+      --secondary-2: #34D399;
+      --wordText: #FFFFFF;
+      --radius: 16px;
+      --transition-speed: 0.5s;
+      --base-w: 320px;
+      --base-h: 450px;
+      --card-w: var(--base-w);
+      --card-h: var(--base-h);
+      --fs-k_word: 50px;
+      --fs-e_word: 50px;
+      --fs-k_sentence: 32px;
+      --pad: 10px;
+      --fab-size: 24px;
+      --fab-offset: 10px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root { --transition-speed: 0.15s; }
+      .slot-inner { transition: none !important; }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0; background: #0f172a;
+      font-family: "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .card {
+      width: var(--card-w);
+      height: var(--card-h);
+      display: grid;
+      grid-template-rows: 2fr 1fr;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #FFFFFF;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    .slot { position: relative; perspective: 1000px; }
+    .slot-inner {
+      position: absolute; inset: 0; transform-style: preserve-3d;
+      transition: transform var(--transition-speed) cubic-bezier(.2,.8,.2,1);
+    }
+
+    /* --- CSS Flip Logic --- */
+    .flip-toggle { display: none; }
+    .flip-toggle:checked ~ .slot-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-label {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* --- End CSS Flip Logic --- */
+
+    .face {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      backface-visibility: hidden; padding: var(--pad);
+      border-radius: 0;
+    }
+
+    /* DESIGN */
+    .front.top { background: #FFFFFF; }
+    .back.top  { background: linear-gradient(135deg, #22d3ee, #0ea5e9); color: #fff; transform: rotateY(180deg); flex-direction: column; }
+    .front.bottom { background: linear-gradient(135deg, #6366F1, var(--primary)); color: var(--wordText); flex-direction: column; }
+    .back.bottom  { background: linear-gradient(135deg, #6366F1, var(--primary)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
+
+    .image-wrap {
+      width: 100%; height: 100%;
+      border-radius: 12px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; background: #fff;
+      box-shadow: none;
+    }
+        .image-wrap img {
+      width: 100%; height: 100%; object-fit: contain;
+      transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+    }
+    .flip-label:hover ~ .image-wrap img {
+      transform: scale(1.05);
+    }
+
+    .word, .meaning, .example {
+      text-align: center;
+      white-space: pre-line;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      padding: 0 6px;
+    }
+    .word { font-weight: 800; font-size: var(--fs-word); line-height: 1.2; }
+    .meaning { font-size: var(--fs-meaning); font-weight: 800; }
+    .example { font-size: var(--fs-example); }
+
+    .audio-fab {
+      position: absolute;
+      top: var(--fab-offset);
+      right: var(--fab-offset);
+      z-index: 3; /* Must be higher than .flip-label */
+      width: var(--fab-size);
+      height: var(--fab-size);
+      border-radius: 9999px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.45);
+      box-shadow: 0 8px 22px rgba(0,0,0,.25);
+      color: #FFFFFF;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .2s ease, background .25s ease;
+      backface-visibility: hidden; /* Prevent button from showing through on back */
+    }
+    .audio-fab:hover { transform: translateY(-1px) scale(1.08); background: rgba(255,255,255,0.3); box-shadow: 0 10px 26px rgba(0,0,0,.3); }
+    .audio-fab:active { transform: translateY(0) scale(0.95); }
+    .audio-fab svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .flip-target { outline: none; cursor: pointer; }
+    .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35) inset; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card" role="region" aria-label="단어 플립카드">
+    <section class="slot" id="slot-top">
+      <input type="checkbox" id="flip-toggle-top" class="flip-toggle">
+      <div class="slot-inner">
+        <div class="face front top">
+          <label for="flip-toggle-top" class="flip-label" aria-label="상단 슬롯 뒤집기"></label>
+          <div class="image-wrap">
+            <img id="image_url" alt="단어 이미지" />
+          </div>
+        </div>
+        <div class="face back top">
+          <label for="flip-toggle-top" class="flip-label" aria-label="상단 슬롯 뒤집기"></label>
+          <button class="audio-fab" type="button" aria-label="k_sentence 오디오 재생" data-audio-key="k_sentence">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <p id="k_sentence" class="example">강아지가 마당에서 놀고 있어요.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slot" id="slot-bottom">
+      <input type="checkbox" id="flip-toggle-bottom" class="flip-toggle">
+      <div class="slot-inner">
+        <div class="face front bottom">
+          <label for="flip-toggle-bottom" class="flip-label" aria-label="하단 슬롯 뒤집기"></label>
+          <button class="audio-fab" type="button" aria-label="e_word 오디오 재생" data-audio-key="e_word">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <div id="e_word" class="word">turtle</div>
+        </div>
+        <div class="face back bottom">
+          <label for="flip-toggle-bottom" class="flip-label" aria-label="하단 슬롯 뒤집기"></label>
+          <button class="audio-fab" type="button" aria-label="k_word 오디오 재생" data-audio-key="k_word">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <div id="k_word" class="meaning">거북이</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const BASE_W = 320, BASE_H = 450, aspect = BASE_H / BASE_W;
+    const rawWidth = params.get('width');
+    const width = rawWidth ? Math.max(120, parseInt(rawWidth, 10) || BASE_W) : BASE_W;
+    const height = Math.round(width * aspect);
+    const scale = width / BASE_W;
+    document.documentElement.style.setProperty('--card-w', width + 'px');
+    document.documentElement.style.setProperty('--card-h', height + 'px');
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    document.documentElement.style.setProperty('--fs-word', clamp(50 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-meaning', clamp(50 * scale, 14, 96) + 'px');
+    document.documentElement.style.setProperty('--fs-example', clamp(36 * scale, 12, 72) + 'px');
+
+    const colorOr = (k, fallback) => {
+      const v = params.get(k);
+      return v ? (v.startsWith('#') ? v : '#' + v) : fallback;
+    };
+    const rs = getComputedStyle(document.documentElement);
+    document.documentElement.style.setProperty('--primary', colorOr('primary', rs.getPropertyValue('--primary').trim() || '#5D5FEF'));
+    document.documentElement.style.setProperty('--secondary', colorOr('secondary', rs.getPropertyValue('--secondary').trim() || '#10B981'));
+    document.documentElement.style.setProperty('--secondary-2', colorOr('secondary2', rs.getPropertyValue('--secondary-2').trim() || '#34D399'));
+    document.documentElement.style.setProperty('--wordText', colorOr('wordText', rs.getPropertyValue('--wordText').trim() || '#FFFFFF'));
+
+    const data = {
+      k_word: params.get('k_word') || '거북이',
+      e_word: params.get('e_word') || 'turtle',
+      k_sentence: params.get('k_sentence') || '강아지가 마당에서 놀고 있어요.',
+      image_url: params.get('image_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_images%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle.png?generation=1756571610264627&alt=media',
+      k_word_audio_url: params.get('k_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle.mp3?generation=1756571611852484&alt=media',
+      k_sentence_audio_url: params.get('k_sentence_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2F%EA%B1%B0%EB%B6%81%EC%9D%B4_tortoise;%20turtle_%EC%98%88%EB%AC%B8.mp3?generation=1756571612500367&alt=media',
+      e_word_audio_url: params.get('e_word_audio_url') || 'https://storage.googleapis.com/download/storage/v1/b/k-learning-data-auto/o/assets%2Fword_audio%2Ftortoise;%20turtle_%EA%B1%B0%EB%B6%81%EC%9D%B4.mp3?generation=1756571614064538&alt=media'
+    };
+
+    document.getElementById('image_url').src = data.image_url;
+    document.getElementById('k_word').textContent = data.k_word.replace(/,/g, '\n');
+    document.getElementById('e_word').textContent = data.e_word.replace(/,/g, '\n');
+    document.getElementById('k_sentence').textContent = data.k_sentence.replace(/,/g, '\n');
+
+    const srcMap = {
+      k_word: data.k_word_audio_url,
+      k_sentence: data.k_sentence_audio_url,
+      e_word: data.e_word_audio_url,
+    };
+    const playAudio = (src) => {
+      if (!src) return;
+      const a = new Audio();
+      a.preload = 'none';
+      a.src = src;
+      a.play().catch(() => console.warn('오디오 재생 실패:', src));
+    };
+
+    document.querySelectorAll('[data-audio-key]').forEach(el => {
+      const key = el.getAttribute('data-audio-key');
+      const src = srcMap[key];
+      if (!src) { el.style.display = 'none'; return; }
+      el.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevents the label from being triggered
+        playAudio(src);
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          playAudio(src);
+        }
+      });
+    });
+  </script>
+</body>
+</html>}
+      });
+    });
+  </script>
+</body>
+</html>
