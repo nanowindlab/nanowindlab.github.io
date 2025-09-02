@@ -121,16 +121,11 @@
       -webkit-backdrop-filter: blur(10px);
       cursor: pointer;
       transition: transform .18s ease, box-shadow .2s ease, background .25s ease;
+      backface-visibility: hidden; /* Prevent button from showing through on back */
     }
     .audio-fab:hover { transform: translateY(-1px) scale(1.08); background: rgba(255,255,255,0.3); box-shadow: 0 10px 26px rgba(0,0,0,.3); }
     .audio-fab:active { transform: translateY(0) scale(0.95); }
     .audio-fab svg { width: 16px; height: 16px; fill: currentColor; }
-
-    /* --- Audio Button Visibility Logic --- */
-    .face.back .audio-fab { display: none; }
-    .flip-toggle:checked ~ .slot-inner .face.front .audio-fab { display: none; }
-    .flip-toggle:checked ~ .slot-inner .face.back .audio-fab { display: inline-flex; }
-    /* --- End Logic --- */
 
     .flip-target { outline: none; cursor: pointer; }
     .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35) inset; border-radius: 8px; }
