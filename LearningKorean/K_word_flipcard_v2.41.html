@@ -83,7 +83,7 @@
     .front.top { background: #FFFFFF; }
     .back.top  { background: linear-gradient(135deg, #22d3ee, #0ea5e9); color: #fff; transform: rotateY(180deg); flex-direction: column; }
     .front.bottom { background: linear-gradient(135deg, #6366F1, var(--primary)); color: var(--wordText); flex-direction: column; }
-    .back.bottom  { background: linear-gradient(135deg, var(--secondary), var(--secondary-2)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
+    .back.bottom  { background: linear-gradient(135deg, #6366F1, var(--primary)); color: #fff; transform: rotateY(180deg); flex-direction: column; }
 
     .image-wrap {
       width: 100%; height: 100%;
@@ -238,6 +238,11 @@
           e.stopPropagation();
           playAudio(src);
         }
+      });
+    });
+  </script>
+</body>
+</html>}
       });
     });
   </script>
