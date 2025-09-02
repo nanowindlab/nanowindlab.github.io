@@ -126,6 +126,12 @@
     .audio-fab:active { transform: translateY(0) scale(0.95); }
     .audio-fab svg { width: 16px; height: 16px; fill: currentColor; }
 
+    /* --- Audio Button Visibility Logic --- */
+    .face.back .audio-fab { display: none; }
+    .flip-toggle:checked ~ .slot-inner .face.front .audio-fab { display: none; }
+    .flip-toggle:checked ~ .slot-inner .face.back .audio-fab { display: inline-flex; }
+    /* --- End Logic --- */
+
     .flip-target { outline: none; cursor: pointer; }
     .flip-target:focus-visible { box-shadow: 0 0 0 3px rgba(93,95,239,.35) inset; border-radius: 8px; }
   </style>
