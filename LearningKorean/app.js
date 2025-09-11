@@ -54,6 +54,16 @@ async function loadWordData() {
     const csvText = await response.text();
     allWordData = parseCSV(csvText);
     console.log(`Loaded ${allWordData.length} words from ${csvUrl}`);
+
+    // URL 파라미터에서 특정 카테고리 값을 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryFromUrl = urlParams.get('category');
+    const validCategories = [...new Set(allWordData.map(item => item.category).filter(Boolean))];
+
+    if (categoryFromUrl && validCategories.includes(categoryFromUrl)) {
+      currentCategory = categoryFromUrl;
+    }
+
     setupCategories();
     filterAndRender();
   } catch (error) {
