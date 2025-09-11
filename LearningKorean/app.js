@@ -1,6 +1,7 @@
 let allWordData = []; // 모든 단어 데이터를 저장하는 마스터 배열
 let wordData = []; // 현재 필터링된 단어 데이터를 저장하는 배열
 let currentCategory = 'All'; // 현재 선택된 카테고리
+let currentCardIndex = 0; // 모바일용 현재 카드 인덱스
 
 const CARDS_PER_PAGE = 9;
 let currentPage = 1;
@@ -12,6 +13,10 @@ const pageInfo = document.getElementById('page-info');
 const prevButton = document.getElementById('prev-page');
 const nextButton = document.getElementById('next-page');
 const categoryFilterContainer = document.getElementById('category-filter-container');
+const mobileNav = document.getElementById('mobile-nav');
+const prevCardButton = document.getElementById('prev-card');
+const nextCardButton = document.getElementById('next-card');
+const cardIndicator = document.getElementById('card-indicator');
 
 // --- DATA PROCESSING ---
 
@@ -31,7 +36,7 @@ function parseCSV(csvText) {
 
 function generateAssetUrls(k_word, e_word) {
   if (!k_word || !e_word) return { image_url: '', k_audio_url: '', k_sentence_audio_url: '', e_audio_url: '' };
-  const baseUrl = CONFIG.ASSETS_BASE_URL; // baseUrl is now '.'
+  const baseUrl = CONFIG.ASSETS_BASE_URL;
   const filename = `${encodeURIComponent(k_word)}_${encodeURIComponent(e_word)}`;
   return {
     image_url: `${baseUrl}/Assets/word_images/${filename}.png`,
@@ -71,12 +76,11 @@ function renderCategoryFilters(categories) {
     button.className = 'category-button';
     button.textContent = category;
     button.dataset.category = category;
-    if (category === currentCategory) {
-      button.classList.add('active');
-    }
+    if (category === currentCategory) button.classList.add('active');
     button.addEventListener('click', () => {
       currentCategory = category;
       currentPage = 1;
+      currentCardIndex = 0;
       updateActiveButton();
       filterAndRender();
     });
@@ -91,11 +95,10 @@ function updateActiveButton() {
 }
 
 function filterAndRender() {
-  if (currentCategory === 'All') {
-    wordData = [...allWordData];
-  } else {
-    wordData = allWordData.filter(item => item.category === currentCategory);
-  }
+  wordData = (currentCategory === 'All') 
+    ? [...allWordData] 
+    : allWordData.filter(item => item.category === currentCategory);
+  
   totalPages = Math.ceil(wordData.length / CARDS_PER_PAGE);
   renderPage();
 }
@@ -118,7 +121,7 @@ function createCardHTML(card, index) {
               <div class="image-wrap"><img src="${assets.image_url}" alt="${k_word} 이미지" onerror="this.style.display='none'"/></div>
             </section>
             <section class="face back top">
-              <button class="audio-fab" type="button" aria-label="예문 오디오 재생" data-audio-src="${assets.k_sentence_audio_url}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+              <button class="audio-fab" type="button" aria-label="예문 오디오 재생" data-audio-src="${assets.k_sentence_audio_url}" style="display: ${assets.k_sentence_audio_url ? 'inline-flex' : 'none'};"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
               <p class="example">${k_sentence.replace(/,/g, '\n')}</p>
             </section>
           </div>
@@ -126,11 +129,11 @@ function createCardHTML(card, index) {
         <section class="slot" id="slot-bottom-${index}">
           <div class="slot-inner">
             <section class="face front bottom flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="하단 슬롯 뒤집기">
-              <button class="audio-fab" type="button" aria-label="한국어 단어 오디오 재생" data-audio-src="${assets.k_audio_url}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+              <button class="audio-fab" type="button" aria-label="한국어 단어 오디오 재생" data-audio-src="${assets.k_audio_url}" style="display: ${assets.k_audio_url ? 'inline-flex' : 'none'};"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
               <div class="word">${k_word.replace(/,/g, '\n')}</div>
             </section>
             <section class="face back bottom">
-              <button class="audio-fab" type="button" aria-label="영어 단어 오디오 재생" data-audio-src="${assets.e_audio_url}" style="display: ${assets.e_audio_url ? 'inline-flex' : 'none'};"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+              <button class="audio-fab" type="button" aria-label="영어 단어 오디오 재생" data-audio-src="${assets.e_audio_url}" style="display: ${assets.e_audio_url ? 'inline-flex' : 'none'};"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
               <div class="meaning">${e_word.replace(/,/g, '\n')}</div>
             </section>
           </div>
@@ -150,10 +153,7 @@ function attachFlip(slotId) {
   const slot = document.getElementById(slotId);
   if (!slot) return;
   const front = slot.querySelector('.front.flip-target');
-  const toggle = () => {
-    const flipped = slot.classList.toggle('flipped');
-    front.setAttribute('aria-pressed', String(flipped));
-  };
+  const toggle = () => slot.classList.toggle('flipped');
   slot.addEventListener('click', (e) => {
     if (e.target.closest('[data-audio-src]')) return;
     toggle();
@@ -165,71 +165,86 @@ function attachFlip(slotId) {
 
 function renderPage() {
   cardContainer.innerHTML = '';
+  const isMobile = window.innerWidth <= 768;
+
   if (wordData.length === 0) {
     cardContainer.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">이 카테고리에는 단어가 없습니다.</div>';
     pageInfo.textContent = '페이지 0 / 0';
     prevButton.disabled = true;
     nextButton.disabled = true;
+    cardIndicator.textContent = '0 / 0';
+    prevCardButton.disabled = true;
+    nextCardButton.disabled = true;
     return;
   }
 
-  const start = (currentPage - 1) * CARDS_PER_PAGE;
-  const end = start + CARDS_PER_PAGE;
-  const pageData = wordData.slice(start, end);
-  const fragment = document.createDocumentFragment();
-
-  pageData.forEach((card, i) => {
-    const cardIndex = start + i;
-    const cardHTML = createCardHTML(card, cardIndex);
-    if (cardHTML) {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = cardHTML;
-      fragment.appendChild(tempDiv.firstElementChild);
+  if (isMobile) {
+    const card = wordData[currentCardIndex];
+    if (card) {
+      const cardHTML = createCardHTML(card, currentCardIndex);
+      cardContainer.innerHTML = cardHTML;
+      attachFlip(`slot-top-${currentCardIndex}`);
+      attachFlip(`slot-bottom-${currentCardIndex}`);
     }
-  });
-
-  cardContainer.appendChild(fragment);
-
-  pageData.forEach((card, i) => {
-    const cardIndex = start + i;
-    if (card.k_word && card.e_word && card.k_sentence) {
-      attachFlip(`slot-top-${cardIndex}`);
-      attachFlip(`slot-bottom-${cardIndex}`);
-    }
-  });
+    cardIndicator.textContent = `${currentCardIndex + 1} / ${wordData.length}`;
+    prevCardButton.disabled = currentCardIndex === 0;
+    nextCardButton.disabled = currentCardIndex >= wordData.length - 1;
+  } else {
+    const start = (currentPage - 1) * CARDS_PER_PAGE;
+    const end = start + CARDS_PER_PAGE;
+    const pageData = wordData.slice(start, end);
+    const fragment = document.createDocumentFragment();
+    pageData.forEach((card, i) => {
+      const cardIndex = start + i;
+      const cardHTML = createCardHTML(card, cardIndex);
+      if (cardHTML) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cardHTML;
+        fragment.appendChild(tempDiv.firstElementChild);
+      }
+    });
+    cardContainer.appendChild(fragment);
+    pageData.forEach((card, i) => {
+      const cardIndex = start + i;
+      if (card.k_word && card.e_word && card.k_sentence) {
+        attachFlip(`slot-top-${cardIndex}`);
+        attachFlip(`slot-bottom-${cardIndex}`);
+      }
+    });
+    pageInfo.textContent = `페이지 ${currentPage} / ${totalPages}`;
+    prevButton.disabled = currentPage === 1;
+    nextButton.disabled = currentPage === totalPages;
+  }
 
   document.querySelectorAll('[data-audio-src]').forEach(el => {
     const src = el.getAttribute('data-audio-src');
-    if (!src || src.endsWith('null') || src.endsWith('undefined')) {
-      el.style.display = 'none';
-      return;
-    }
+    if (!src) return;
     el.addEventListener('click', (e) => { e.stopPropagation(); playAudio(src); });
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); playAudio(src); }
     });
   });
-
-  pageInfo.textContent = `페이지 ${currentPage} / ${totalPages}`;
-  prevButton.disabled = currentPage === 1;
-  nextButton.disabled = currentPage === totalPages;
 }
 
 // --- EVENT LISTENERS ---
 
 prevButton.addEventListener('click', () => {
-  if (currentPage > 1) {
-    currentPage--;
-    renderPage();
-  }
+  if (currentPage > 1) { currentPage--; renderPage(); }
 });
 
 nextButton.addEventListener('click', () => {
-  if (currentPage < totalPages) {
-    currentPage++;
-    renderPage();
-  }
+  if (currentPage < totalPages) { currentPage++; renderPage(); }
 });
+
+prevCardButton.addEventListener('click', () => {
+  if (currentCardIndex > 0) { currentCardIndex--; renderPage(); }
+});
+
+nextCardButton.addEventListener('click', () => {
+  if (currentCardIndex < wordData.length - 1) { currentCardIndex++; renderPage(); }
+});
+
+window.addEventListener('resize', renderPage); // 화면 크기 변경 시 레이아웃 재구성
 
 // --- INITIALIZATION ---
 
