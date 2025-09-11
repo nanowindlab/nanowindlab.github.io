@@ -46,34 +46,31 @@ function generateAssetUrls(k_word, e_word) {
   };
 }
 
-async function loadWordData() {
+async function initializeApp() {
   const csvUrl = CONFIG.USE_LOCAL ? CONFIG.LOCAL_CSV_PATH : CONFIG.GOOGLE_SHEETS_URL;
   try {
     const response = await fetch(csvUrl);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const csvText = await response.text();
-    allWordData = parseCSV(csvText);
-    console.log(`Loaded ${allWordData.length} words from ${csvUrl}`);
+    const rawData = parseCSV(csvText);
+    console.log(`Loaded ${rawData.length} words from ${csvUrl}`);
 
-    // URL 파라미터에서 특정 카테고리 값을 확인 (앞뒤 공백 제거로 안정성 높임)
     const urlParams = new URLSearchParams(window.location.search);
-    const categoryFromUrl = urlParams.get('category')?.trim(); // URL 파라미터의 공백 제거
-    const validCategories = [...new Set(allWordData.map(item => item.category?.trim()).filter(Boolean))]; // 데이터의 카테고리 공백 제거
+    const categoryFromUrl = urlParams.get('category')?.trim();
 
-    // --- DEBUGGING START ---
-    console.log("DEBUG: Category from URL parameter is:", `'${categoryFromUrl}'`);
-    console.log("DEBUG: Available categories from data are:", validCategories);
     if (categoryFromUrl) {
-      console.log(`DEBUG: Is '${categoryFromUrl}' in the list? ->`, validCategories.includes(categoryFromUrl));
-    }
-    // --- DEBUGGING END ---
-
-    if (categoryFromUrl && validCategories.includes(categoryFromUrl)) {
+      // --- Single Category Mode ---
+      categoryFilterContainer.style.display = 'none';
+      allWordData = rawData.filter(item => item.category?.trim() === categoryFromUrl);
       currentCategory = categoryFromUrl;
+      filterAndRender();
+    } else {
+      // --- Normal Mode ---
+      categoryFilterContainer.style.display = 'flex';
+      allWordData = rawData;
+      setupCategories();
+      filterAndRender();
     }
-
-    setupCategories();
-    filterAndRender();
   } catch (error) {
     console.error('Data loading failed:', error);
     cardContainer.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">단어 데이터를 불러오는데 실패했습니다. 네트워크 연결 또는 CSV 주소를 확인해주세요.</div>';
@@ -83,7 +80,7 @@ async function loadWordData() {
 // --- CATEGORY & FILTERING ---
 
 function setupCategories() {
-  const categories = ['All', ...new Set(allWordData.map(item => item.category).filter(Boolean))];
+  const categories = ['All', ...new Set(allWordData.map(item => item.category?.trim()).filter(Boolean))];
   renderCategoryFilters(categories);
 }
 
@@ -147,11 +144,11 @@ function createCardHTML(card, index) {
         <section class="slot" id="slot-bottom-${index}">
           <div class="slot-inner">
             <section class="face front bottom flip-target" role="button" tabindex="0" aria-pressed="false" aria-label="하단 슬롯 뒤집기">
-              <button class="audio-fab" type="button" aria-label="한국어 단어 오디오 재생" data-audio-src="${assets.k_audio_url}" style="display: ${assets.k_audio_url ? 'inline-flex' : 'none'};"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+              <button class="audio-fab" type="button" aria-label="한국어 단어 오디오 재생" data-audio-src="${assets.k_audio_url}" style="display: ${assets.k_audio_url ? 'inline-flex' : 'none'};"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
               <div class="word">${k_word.replace(/,/g, '\n')}</div>
             </section>
             <section class="face back bottom">
-              <button class="audio-fab" type="button" aria-label="영어 단어 오디오 재생" data-audio-src="${assets.e_audio_url}" style="display: ${assets.e_audio_url ? 'inline-flex' : 'none'};"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+              <button class="audio-fab" type="button" aria-label="영어 단어 오디오 재생" data-audio-src="${assets.e_audio_url}" style="display: ${assets.e_audio_url ? 'inline-flex' : 'none'};"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
               <div class="meaning">${e_word.replace(/,/g, '\n')}</div>
             </section>
           </div>
@@ -266,4 +263,4 @@ window.addEventListener('resize', renderPage); // 화면 크기 변경 시 레�
 
 // --- INITIALIZATION ---
 
-loadWordData();
+initializeApp();
