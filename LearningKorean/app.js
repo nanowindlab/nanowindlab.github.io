@@ -55,10 +55,18 @@ async function loadWordData() {
     allWordData = parseCSV(csvText);
     console.log(`Loaded ${allWordData.length} words from ${csvUrl}`);
 
-    // URL 파라미터에서 특정 카테고리 값을 확인
+    // URL 파라미터에서 특정 카테고리 값을 확인 (앞뒤 공백 제거로 안정성 높임)
     const urlParams = new URLSearchParams(window.location.search);
-    const categoryFromUrl = urlParams.get('category');
-    const validCategories = [...new Set(allWordData.map(item => item.category).filter(Boolean))];
+    const categoryFromUrl = urlParams.get('category')?.trim(); // URL 파라미터의 공백 제거
+    const validCategories = [...new Set(allWordData.map(item => item.category?.trim()).filter(Boolean))]; // 데이터의 카테고리 공백 제거
+
+    // --- DEBUGGING START ---
+    console.log("DEBUG: Category from URL parameter is:", `'${categoryFromUrl}'`);
+    console.log("DEBUG: Available categories from data are:", validCategories);
+    if (categoryFromUrl) {
+      console.log(`DEBUG: Is '${categoryFromUrl}' in the list? ->`, validCategories.includes(categoryFromUrl));
+    }
+    // --- DEBUGGING END ---
 
     if (categoryFromUrl && validCategories.includes(categoryFromUrl)) {
       currentCategory = categoryFromUrl;
