@@ -193,3 +193,60 @@
       font-weight: bold;
       border-color: var(--primary);
     }
+
+    #mobile-nav {
+      display: none; /* 평소에는 숨김 */
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #fff;
+    }
+    #mobile-nav button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: background 0.3s;
+    }
+    #mobile-nav button:hover {
+      background: #4338ca;
+    }
+    #mobile-nav button:disabled {
+      background: #374151;
+      cursor: not-allowed;
+    }
+
+    /* --- 반응형 디자인: 모바일 화면 --- */
+    @media (max-width: 768px) {
+      #card-container {
+        /* 모바일에서는 그리드가 아닌 일반 블록 형태로 변경 */
+        display: block;
+        padding: 10px;
+      }
+
+      .card {
+        width: 90%;
+        max-width: 360px;
+        margin: 0 auto; /* 가운데 정렬 */
+        padding-bottom: 126%; /* 모바일용 비율 재조정 */
+      }
+
+      .word, .meaning {
+        font-size: 8vw; /* 모바일에서 글자 크게 */
+      }
+
+      .example {
+        font-size: 5vw;
+      }
+
+      #pagination {
+        display: none; /* 데스크탑용 페이지네이션 숨김 */
+      }
+
+      #mobile-nav {
+        display: flex; /* 모바일용 네비게이션 보임 */
+      }
+    }
