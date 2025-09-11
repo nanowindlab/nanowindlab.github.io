@@ -31,13 +31,13 @@ function parseCSV(csvText) {
 
 function generateAssetUrls(k_word, e_word) {
   if (!k_word || !e_word) return { image_url: '', k_audio_url: '', k_sentence_audio_url: '', e_audio_url: '' };
-  const baseUrl = CONFIG.ASSETS_BASE_URL;
+  const baseUrl = CONFIG.ASSETS_BASE_URL; // baseUrl is now '.'
   const filename = `${encodeURIComponent(k_word)}_${encodeURIComponent(e_word)}`;
   return {
-    image_url: `${baseUrl}/assets/images/${filename}.png`,
-    k_audio_url: `${baseUrl}/assets/audio/korean/${filename}.mp3`,
-    k_sentence_audio_url: `${baseUrl}/assets/audio/korean/${filename}_예문.mp3`,
-    e_audio_url: `${baseUrl}/assets/audio/english/${e_word}_${k_word}.mp3`
+    image_url: `${baseUrl}/Assets/word_images/${filename}.png`,
+    k_audio_url: `${baseUrl}/Assets/word_audio/${filename}.mp3`,
+    k_sentence_audio_url: `${baseUrl}/Assets/word_audio/${filename}_예문.mp3`,
+    e_audio_url: `${baseUrl}/Assets/word_audio/${e_word}_${k_word}.mp3`
   };
 }
 
