@@ -102,12 +102,12 @@
       padding: 0 6px;
     }
     .meaning {
-      font-size: 5.0vw; font-weight: 800; text-align: center; white-space: pre-line;
+      font-size: clamp(18px, 5.0vw, 44px); font-weight: 800; text-align: center; white-space: pre-line;
       word-break: break-word; overflow-wrap: anywhere;
       padding: 0 6px;
     }
     .example {
-      font-size: 3.6vw;
+            font-size: clamp(14px, 3.6vw, 32px);
       text-align: center; white-space: pre-line;
       word-break: break-word; overflow-wrap: anywhere;
       padding: 0 6px;
